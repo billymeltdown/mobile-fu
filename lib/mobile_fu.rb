@@ -30,14 +30,8 @@ module ActionController
       #      has_mobile_fu(true)
       #    end
         
-      def has_mobile_fu(test_mode = false)
+      def has_mobile_fu
         include ActionController::MobileFu::InstanceMethods
-
-        if test_mode 
-          before_filter :force_mobile_format
-        else
-          before_filter :set_mobile_format
-        end
 
         helper_method :is_mobile_device?
         helper_method :in_mobile_view?
@@ -59,6 +53,21 @@ module ActionController
     
     module InstanceMethods
       
+      # Enables toggling of mobile view, despite detection
+      def bypass_mobile_view(flag=nil)
+        session[:bypass_mobile_view] = (flag.nil?) ? true : flag
+      end
+      
+      def bypass_mobile_view?
+        session[:bypass_mobile_view]
+      end
+      
+      def check_for_bypass(param)
+        if !params[param.to_sym].blank?
+          bypass_mobile_view( params[param.to_sym] == 'true' )
+        end
+      end
+      
       # Forces the request format to be :mobile
       
       def force_mobile_format
@@ -70,9 +79,14 @@ module ActionController
       # the user has opted to use either the 'Standard' view or 'Mobile' view.
       
       def set_mobile_format
-        if is_mobile_device?
-          request.format = session[:mobile_view] == false ? :html : :mobile
-          session[:mobile_view] = true if session[:mobile_view].nil?
+        # FIXME: let user set the parameter to use
+        check_for_bypass(:bypass)
+        
+        # don't mess with the format at all, unless we are dealing with html to begin with
+        # if the device is mobile, and the user isn't opting out of the mobile view...
+        if request.format == :html && is_mobile_device? && !bypass_mobile_view?
+          session[:mobile_view] = true
+          request.format = :mobile
         end
       end
       
