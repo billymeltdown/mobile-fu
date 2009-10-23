@@ -18,16 +18,18 @@ module ActionController
     
     module ClassMethods
       
-      # Add this to one of your controllers to use MobileFu.  
+      # Add this to one of your controllers to include MobileFu, and run the before_filter
+      #
+      #    class SessionController < ApplicationController 
+      #      has_mobile_fu
+      #      before_filter :set_mobile_format, :only => [ :foo, :bar ]
+      #    end
+      #
+      # You can also force mobile mode by calling a different before_filter
       #
       #    class ApplicationController < ActionController::Base 
       #      has_mobile_fu
-      #    end
-      #
-      # You can also force mobile mode by passing in 'true'
-      #
-      #    class ApplicationController < ActionController::Base 
-      #      has_mobile_fu(true)
+      #      before_filter :force_mobile_format
       #    end
         
       def has_mobile_fu
