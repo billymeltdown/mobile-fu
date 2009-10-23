@@ -1,22 +1,49 @@
-= Mobile Fu
+= Mobile Fu (billymeltdown fork)
 
 Want to automatically detect mobile devices that access your Rails application?  
 Mobile Fu allows you to do just that.  People can access your site from a Palm,
 Blackberry, iPhone, Nokia, etc. and it will automatically adjust the format of
 the request from :html to :mobile.  
 
+== Modification Notes
+
+I've modified this plugin a bit so that the use of the has_mobile_fu method
+simply includes the plugin, but doesn't automatically set any before filters.
+
+I did this because I only want to run it on some actions, where I've actually
+taken the time to provide mobile views (e.g. new.mobile.erb).
+
+The other major changes:
+
+By providing the parameter 'bypass' with any request and setting it to the 
+string 'true', the end-user can switch back to :html format for the rest of his
+session, allowing me to create links to 'Exit mobile view', etc. To turn mobile
+viewing back on, bypass can be set to something else, like 'false', or 
+'superdisestablishmententarianism'.
+
+Directions below have been modified to conform to these changes.
+
 == Usage
 
-Add this this one line to the controller.
+Add this to one of your controllers:
 
-    class ApplicationController < ActionController::Base
-      has_mobile_fu
-    end
+  class ApplicationController < ActionController::Base
+    has_mobile_fu
+    before_filter :set_mobile_format
+  end
 
-Once this is in place, any request that comes from a mobile device will be be 
+With this in place, any request that comes from a mobile device will be be 
 set as :mobile format.  It is up to you to determine how you want to handle
 these requests.  It is also up to you to create the .mobile.erb versions of
-your views that are to be requested.
+your views that are to be requested. You can use the standard options for 
+before_filter to limit the scope of which requests are processed this way:
+
+  class SessionController < ApplicationController
+    has_mobile_fu
+    before_filter :set_mobile_format, :except => [:help, :forgot_password]
+    # use :force_mobile_format instead to test
+    # before_filter :force_mobile_format
+  end
 
 Then add the line below to config/initializers/mime_types.rb
 
@@ -29,7 +56,7 @@ depending on whether or not it is a mobile request.  How can you check this?
 
 You can also determine which format is currently set in by calling the following:
 
-  is_mobile_view? # => Returns true or false depending on current req. format
+  in_mobile_view? # => Returns true or false depending on current req. format
 
 Also, if you want the ability to allow a user to switch between 'mobile' and
 'standard' format (:html), you can just adjust the mobile_view session variable
@@ -37,6 +64,30 @@ in a custom controller action.
 
   session[:mobile_view] # => Set to true if request format is :mobile and false
                              if set to :html
+                             
+*FORK NOTE:* I found this to be a fairly unreliable means of doing this, and 
+that's why I introduced the bypass mechanism.
+
+== Bypass
+
+If you have some custom controller action that allows the user to toggle the
+mobile formatting, you can utilize these methods for great success:
+
+  bypass_mobile_view        # => Causes mobile formatting to be switched off for
+                                  the session
+  bypass_mobile_view(false) # => Turns off the bypass
+
+You can avoid calling these methods yourself, set_mobile_format will check to
+see if a 'bypass' parameter is present in the request. If present and it equals
+the string 'true', bypass will be enabled (if set to anything else, it will be
+disabled). Thus, you can create links like this for the user:
+
+  = link_to 'Exit mobile view', some_path(:bypass => :true)
+  = link_to 'Switch to mobile view', some_path(:bypass => :false)
+  
+*To do:* Allow user to define custom parameter for toggling the bypass.
+  
+== Custom Style Over-rides Based on Device
 
 So, different devices need different styling.  Don't worry, we've got this
 baked in to Mobile Fu.
